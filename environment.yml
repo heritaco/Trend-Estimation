@@ -1,12 +1,16 @@
-name: guerrero-gpu
+name: trend_estimation
 channels:
-  - defaults
+  - conda-forge
 dependencies:
-  - python=3.11
-  - tk
+  - python=3.13
+
   - numpy
+  - pandas
   - matplotlib
+  - seaborn
+
   - ipykernel
-  - cuda-version=12.4
-  - cupy
-prefix: C:\Users\herie\miniconda3\envs\guerrero-gpu
+  - pip
+
+  - pip:
+      - yfinance
