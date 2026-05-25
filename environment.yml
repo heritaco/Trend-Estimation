@@ -2,15 +2,12 @@ name: trend_estimation
 channels:
   - conda-forge
 dependencies:
-  - python=3.13
-
+  - python>=3.10
   - numpy
+  - scipy
   - pandas
   - matplotlib
-  - seaborn
-
-  - ipykernel
+  - pytest
   - pip
-
   - pip:
-      - yfinance
+      - -e .
