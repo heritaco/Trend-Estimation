@@ -158,7 +158,7 @@ class BenchmarkRunner:
         params = {
             "kind": "selector",
             "best_order": getattr(selection, "best_order_", None),
-            "best_smoothness": getattr(selection, "best_smoothness_", None),
+            "guerrero_smoothness": getattr(selection, "best_smoothness_", None),
             "best_lambda": getattr(selection, "best_lambda_", None),
             "best_score": getattr(selection, "best_score_", None),
         }

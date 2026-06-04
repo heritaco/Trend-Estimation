@@ -1,0 +1,17 @@
+\begin{center}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lllllllllll}
+\toprule
+model & n\_obs & MAE & RMSE & SMAPE & best\_order & guerrero\_smoothness & best\_lambda & window & alpha & degree \\
+\midrule
+TrainValidationSelector & 827 & 0.127263 & 0.148216 & 1.475928 & 1.0 & 0.05 & 0.027008 &  &  &  \\
+TimeWeightedValidationSelector & 827 & 0.147868 & 0.170415 & 1.717913 & 1.0 & 0.98 & 615.756247 &  &  &  \\
+HPTrend & 827 & 0.675167 & 0.774414 & 7.389961 & 2.0 & 0.944195 & 1600.0 &  &  &  \\
+WhittakerTrend & 827 & 0.039826 & 0.04672 & 0.462446 & 2.0 & 0.75 & 4.874751 &  &  &  \\
+MovingAverageTrend & 827 & 0.322219 & 0.367195 & 3.792746 &  &  &  & 60.0 &  &  \\
+ExponentialSmoothingTrend & 827 & 0.290947 & 0.338309 & 3.416307 &  &  &  &  & 0.2 &  \\
+PolynomialTrendForecaster & 827 & 0.083899 & 0.09498 & 0.973113 &  &  &  &  &  & 2.0 \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}

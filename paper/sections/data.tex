@@ -1,0 +1,10 @@
+\section{Data}
+The empirical data are daily S\&P 500 observations from \texttt{yfinance}
+\citep{yfinance}, using ticker \texttt{\string^GSPC} from 2010-01-01 onward.
+The analysis uses
+\[
+  y_t = \log(P_t),
+\]
+where $P_t$ is the adjusted close price when available and the close price
+otherwise. The raw and processed data are cached under \texttt{paper/data/} so
+that the experiment does not require a download on every run.

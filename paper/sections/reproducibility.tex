@@ -1,0 +1,16 @@
+\section{Reproducibility}
+The empirical pipeline is distributed with the local \texttt{trend\_estimation}
+package and paper scripts \citep{trendestimation}. From the repository root,
+activate the environment and install the local package:
+\begin{verbatim}
+conda activate trend_estimation
+python -m pip install -e ".[dev,finance]"
+\end{verbatim}
+Then run:
+\begin{verbatim}
+python paper/build_paper.py --ticker ^GSPC --start 2010-01-01 --no-compile
+\end{verbatim}
+If \texttt{latexmk} is installed, compile with:
+\begin{verbatim}
+latexmk -pdf -interaction=nonstopmode -outdir=paper/build paper/main.tex
+\end{verbatim}

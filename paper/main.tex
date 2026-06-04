@@ -1,0 +1,61 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{natbib}
+\usepackage{hyperref}
+\usepackage{siunitx}
+
+\makeatletter
+\IfFileExists{figures/sp500_train_val_test_split.pdf}{
+  \newcommand{\paperroot}{}
+}{
+  \newcommand{\paperroot}{paper/}
+}
+\makeatother
+
+\title{A Reproducible Comparison of Trend Estimation Methods on S\&P 500 Log Prices}
+\author{Heriberto Espino-Montelongo}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This paper compares a train-validation smoothness selector for penalized trend
+estimation against classical and simple benchmark methods on historical S\&P
+500 prices. The study uses the local \texttt{trend\_estimation} Python library
+as a reproducible software dependency. Because real financial data do not
+provide an observed true trend, the empirical comparison is based on temporal
+out-of-sample forecasting errors and realized roughness diagnostics rather than
+claims about true-trend recovery. The manuscript also distinguishes Guerrero
+smoothness, an input index for finite-difference penalized smoothers, from
+realized roughness, an output diagnostic available for every fitted trend.
+\end{abstract}
+
+\input{\paperroot sections/introduction.tex}
+\input{\paperroot sections/methods.tex}
+\input{\paperroot sections/algorithm.tex}
+\input{\paperroot sections/data.tex}
+\input{\paperroot sections/metrics.tex}
+\input{\paperroot sections/results.tex}
+\input{\paperroot sections/discussion.tex}
+\input{\paperroot sections/reproducibility.tex}
+\input{\paperroot sections/conclusion.tex}
+
+\bibliographystyle{plainnat}
+\IfFileExists{biblio.bib}{
+  \bibliography{biblio}
+}{
+  \bibliography{paper/biblio}
+}
+
+\end{document}

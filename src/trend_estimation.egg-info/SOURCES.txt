@@ -27,6 +27,7 @@ src/trend_estimation/forecasting/extrapolation.py
 src/trend_estimation/forecasting/polynomial.py
 src/trend_estimation/metrics/__init__.py
 src/trend_estimation/metrics/errors.py
+src/trend_estimation/metrics/smoothness.py
 src/trend_estimation/models/__init__.py
 src/trend_estimation/models/base.py
 src/trend_estimation/models/exponential_smoothing.py
@@ -77,6 +78,7 @@ tests/test_penalized_trend.py
 tests/test_plotting.py
 tests/test_polynomial_forecast.py
 tests/test_smoothness.py
+tests/test_smoothness_metrics.py
 tests/test_solvers.py
 tests/test_synthetic_datasets.py
 tests/test_time_weighted.py

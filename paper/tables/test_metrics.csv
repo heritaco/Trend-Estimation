@@ -1,0 +1,8 @@
+model,phase,target,n_obs,MAE,MSE,RMSE,MAPE,SMAPE,best_order,guerrero_smoothness,best_lambda,window,alpha,degree,notes
+TrainValidationSelector,test,observed_series,827,0.12726315029371185,0.021968086199671864,0.1482163492995016,1.4616674717986258,1.4759284017824825,1.0,0.05,0.027008089353330433,,,,Selected on validation after fitting 2476 training observations.
+TimeWeightedValidationSelector,test,observed_series,827,0.14786842514793083,0.029041277289263954,0.17041501485862082,1.6987374735072718,1.7179128850468128,1.0,0.98,615.7562471926212,,,,Selected on validation after fitting 2476 training observations.
+HPTrend,test,observed_series,827,0.6751671614953765,0.5997165819483666,0.774413702066516,7.760696654893636,7.389961042198344,2.0,0.9441945106873262,1600.0,,,,Fixed-parameter baseline; no validation hyperparameter search.
+WhittakerTrend,test,observed_series,827,0.03982587314652284,0.00218276588791477,0.04672008013600544,0.46198550705740077,0.46244578326705404,2.0,0.749999999998464,4.874751468887553,,,,Fixed-parameter baseline; no validation hyperparameter search.
+MovingAverageTrend,test,observed_series,827,0.3222192711860074,0.13483209618188136,0.3671949021730576,3.702268869245108,3.792746052201352,,,,60.0,,,Fixed-parameter baseline; no validation hyperparameter search.
+ExponentialSmoothingTrend,test,observed_series,827,0.2909471767377856,0.11445265124558306,0.3383085148877915,3.339810299660047,3.4163066698886504,,,,,0.2,,Fixed-parameter baseline; no validation hyperparameter search.
+PolynomialTrendForecaster,test,observed_series,827,0.08389891131380266,0.009021275641152895,0.09498039608862924,0.9698501259702272,0.9731130350102627,,,,,,2.0,Polynomial fitted on train for validation and train+validation for test.

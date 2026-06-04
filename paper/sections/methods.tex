@@ -1,0 +1,43 @@
+\section{Methods}
+The proposed estimator uses penalized least squares. For an observed series
+$y_1,\ldots,y_n$, the fitted trend $\hat{\tau}$ is obtained by balancing
+fidelity to the observations against a finite-difference roughness penalty. A
+typical objective has the form
+\[
+  \sum_{t=1}^n (y_t-\tau_t)^2 + \lambda \|D^d \tau\|_2^2,
+\]
+where $D^d$ is a difference operator of order $d$ and $\lambda$ controls
+smoothness. This formulation follows the finite-difference penalized smoothing
+tradition associated with Whittaker-Henderson graduation, Guerrero's
+smoothness index, and modern penalized-spline and perfect-smoother treatments
+\citep{whittaker1922graduation,henderson1924graduation,
+guerrero2007penalized,eilers1996psplines,eilers2003perfect,wahba1990splines}.
+
+The train-validation selector fits candidate penalized trends on the training
+segment, forecasts the validation segment, and selects the candidate with the
+lowest validation loss. The time-weighted variant uses a validation loss that
+can emphasize later validation observations. The baseline methods are an
+HP-style trend \citep{hodrick1997business,king1993lowfrequency}, a
+Whittaker-Henderson-style penalized trend
+\citep{whittaker1922graduation,henderson1924graduation}, a trailing moving
+average, simple exponential smoothing, and a polynomial trend forecaster.
+Moving-average and exponential-smoothing benchmarks are included because they
+are common forecasting baselines \citep{brown1959forecasting,holt2004exponential,
+winters1960forecasting,gardner1985exponential,gardner2006exponential,
+hyndman2008exponential}. The polynomial benchmark is a low-dimensional
+regression baseline \citep{draper1998regression}.
+
+Guerrero's contribution is used here as a common smoothness scale for the
+methods whose fitted trends solve a finite-difference penalized least-squares
+problem. The train-validation selector and the time-weighted selector search
+over Guerrero smoothness values and choose the value that minimizes their
+validation loss. HPTrend and WhittakerTrend do not learn smoothness from the
+validation set in this paper; instead, their conventional penalty choices are
+converted back to the same Guerrero index so they can be interpreted on the
+same model-side scale. Thus the four Guerrero-compatible methods share the
+same penalty geometry, but they differ in how the penalty is selected.
+
+The temporal protocol is strict. The series is split into 60 percent training,
+20 percent validation, and 20 percent test observations. Hyperparameters are
+selected using only the training and validation segments. Final test forecasts
+are produced after refitting on the combined training and validation data.

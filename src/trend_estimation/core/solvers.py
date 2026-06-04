@@ -4,7 +4,6 @@ from dataclasses import dataclass
 import numpy as np
 
 from .difference import difference_matrix
-from .smoothness import lambda_to_smoothness
 from trend_estimation.utils.arrays import as_1d_float_array
 
 
@@ -37,8 +36,42 @@ class GuerreroSpectralSolver:
         return 1.0 - self.order / self.n_obs if self.order > 0 else 1.0
 
     def lambda_from_s(self, smoothness: float) -> float:
-        from .smoothness import smoothness_to_lambda
-        return smoothness_to_lambda(smoothness, self.n_obs, self.order)
+        smoothness = float(smoothness)
+        if smoothness <= 0:
+            return 0.0
+        if smoothness >= 1.0:
+            smoothness = 0.999999
+        if self.order == 0:
+            return smoothness / (1.0 - smoothness)
+
+        target = smoothness * self.s_max
+
+        def s_raw(lambda_value: float) -> float:
+            return 1.0 - float(np.sum(1.0 / (1.0 + lambda_value * self.eigvals))) / self.n_obs
+
+        lo, hi = 0.0, 1.0
+        while s_raw(hi) < target and hi < 1e16:
+            hi *= 10.0
+        for _ in range(100):
+            mid = 0.5 * (lo + hi)
+            val = s_raw(mid)
+            if abs(val - target) < 1e-11:
+                return float(mid)
+            if val < target:
+                lo = mid
+            else:
+                hi = mid
+        return float(0.5 * (lo + hi))
+
+    def smoothness_from_lambda(self, lambda_: float) -> float:
+        lambda_ = float(lambda_)
+        if lambda_ < 0:
+            raise ValueError("lambda_ must be nonnegative.")
+        if self.order == 0:
+            return lambda_ / (1.0 + lambda_)
+        tr = float(np.sum(1.0 / (1.0 + lambda_ * self.eigvals)))
+        s_raw = 1.0 - tr / self.n_obs
+        return float(s_raw / self.s_max) if self.s_max > 0 else 0.0
 
     def fit_for_lambda(
         self,
@@ -81,7 +114,7 @@ class GuerreroSpectralSolver:
         penalty_residuals = (self.D @ trend) - m_hat
         dof = max(1, self.n_obs - self.order - 1)
         sigma2_hat = float((residuals @ residuals + lambda_ * (penalty_residuals @ penalty_residuals)) / dof)
-        smoothness = lambda_to_smoothness(lambda_, self.n_obs, self.order)
+        smoothness = self.smoothness_from_lambda(lambda_)
         return SolverResult(trend, m_hat, lambda_, sigma2_hat, diag_smoother, smoothness)
 
     def fit_for_s(self, y, smoothness: float, **kwargs) -> SolverResult:

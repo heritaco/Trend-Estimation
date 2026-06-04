@@ -1,0 +1,8 @@
+model,phase,target,n_obs,roughness_order,realized_roughness,test_RMSE,best_order,guerrero_smoothness,best_lambda,notes
+TrainValidationSelector,train_validation,observed_series,3301,1,0.37295520351925115,0.1482163492995016,1.0,0.05,0.027008089353330433,Selected on validation after fitting 2476 training observations.
+TimeWeightedValidationSelector,train_validation,observed_series,3301,1,0.0025113493947067408,0.17041501485862082,1.0,0.98,615.7562471926212,Selected on validation after fitting 2476 training observations.
+HPTrend,train_validation,observed_series,3301,2,0.00012620287136576682,0.774413702066516,2.0,0.9441945106873262,1600.0,Fixed-parameter baseline; no validation hyperparameter search.
+WhittakerTrend,train_validation,observed_series,3301,2,0.010925046552104536,0.04672008013600544,2.0,0.749999999998464,4.874751468887553,Fixed-parameter baseline; no validation hyperparameter search.
+MovingAverageTrend,train_validation,observed_series,3301,2,0.0002543481633949122,0.3671949021730576,,,,Fixed-parameter baseline; no validation hyperparameter search.
+ExponentialSmoothingTrend,train_validation,observed_series,3301,2,0.01896143813387257,0.3383085148877915,,,,Fixed-parameter baseline; no validation hyperparameter search.
+PolynomialTrendForecaster,train_validation,observed_series,3301,2,4.306989212117787e-13,0.09498039608862924,,,,Polynomial fitted on train for validation and train+validation for test.

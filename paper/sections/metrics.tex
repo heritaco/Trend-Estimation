@@ -1,0 +1,26 @@
+\section{Metrics}
+Forecast accuracy is reported using MAE, MSE, RMSE, MAPE, and SMAPE. The main
+target is the observed log-price series. Real financial data do not provide an
+observed true trend, so this report does not evaluate true-trend recovery on the
+S\&P 500 series. These forecast-error summaries are standard descriptive tools
+in empirical forecasting comparisons \citep{makridakis1998forecasting,
+hyndman2008exponential}.
+
+For finite-difference penalized least-squares smoothers, the reported
+Guerrero smoothness value is the model-side index
+\[
+  S_d(\lambda; N)
+  =
+  1 -
+  \frac{\mathrm{tr}\left[\left(I_N+\lambda D_d^\top D_d\right)^{-1}\right]}{N},
+  \qquad d \ge 1.
+\]
+It is used to choose or interpret the penalty \(\lambda\) once the sample size
+\(N\) and difference order \(d\) are fixed \citep{guerrero2007penalized}.
+
+As a separate output diagnostic, the paper reports realized roughness
+\[
+  R_d(\hat{\tau}) = \|D^d\hat{\tau}\|_2^2.
+\]
+Realized roughness can be computed for any fitted trend and should not be
+identified with Guerrero smoothness.

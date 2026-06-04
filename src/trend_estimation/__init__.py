@@ -30,7 +30,7 @@ from trend_estimation.selection import (
 )
 from trend_estimation.validation import mse_loss, weighted_mse, TimeWeightedValidationLoss, make_time_weights, train_val_test_split, train_val_test_split_indices
 from trend_estimation.forecasting import ForecastResult, forecast_trend, build_polynomial_from_tail
-from trend_estimation.metrics import mae, mse, rmse, mape, smape, error_metrics_table, compare_error_tables
+from trend_estimation.metrics import mae, mse, rmse, mape, smape, error_metrics_table, compare_error_tables, roughness_d
 from trend_estimation.datasets import (
     SyntheticTrendData,
     make_polynomial_trend_series,
@@ -67,7 +67,7 @@ __all__ = [
     "TrainValidationSelector", "TimeWeightedValidationSelector", "SmoothnessSelector",
     "mse_loss", "weighted_mse", "TimeWeightedValidationLoss", "make_time_weights",
     "train_val_test_split", "train_val_test_split_indices", "ForecastResult", "forecast_trend", "build_polynomial_from_tail",
-    "mae", "mse", "rmse", "mape", "smape", "error_metrics_table", "compare_error_tables",
+    "mae", "mse", "rmse", "mape", "smape", "error_metrics_table", "compare_error_tables", "roughness_d",
     "SyntheticTrendData", "make_polynomial_trend_series", "make_noisy_trend_series", "make_piecewise_trend_series",
     "make_sinusoidal_trend_series", "make_local_linear_trend_series", "make_structural_break_series",
     "plot_smoothed_series", "plot_train_val_test_split", "plot_validation_curve", "plot_forecasted_trend",

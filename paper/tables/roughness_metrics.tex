@@ -1,0 +1,17 @@
+\begin{center}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{llll}
+\toprule
+model & roughness\_order & realized\_roughness & test\_RMSE \\
+\midrule
+TrainValidationSelector & 1 & 0.372955 & 0.148216 \\
+TimeWeightedValidationSelector & 1 & 0.002511 & 0.170415 \\
+HPTrend & 2 & 0.000126 & 0.774414 \\
+WhittakerTrend & 2 & 0.010925 & 0.04672 \\
+MovingAverageTrend & 2 & 0.000254 & 0.367195 \\
+ExponentialSmoothingTrend & 2 & 0.018961 & 0.338309 \\
+PolynomialTrendForecaster & 2 & 0.0 & 0.09498 \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}

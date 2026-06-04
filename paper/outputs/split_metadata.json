@@ -1,0 +1,12 @@
+{
+  "n_obs": 4128,
+  "n_train": 2476,
+  "n_validation": 825,
+  "n_test": 827,
+  "train_start": "2010-01-04",
+  "train_end": "2019-11-01",
+  "validation_start": "2019-11-04",
+  "validation_end": "2023-02-13",
+  "test_start": "2023-02-14",
+  "test_end": "2026-06-02"
+}

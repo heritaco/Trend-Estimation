@@ -1,0 +1,8 @@
+model,phase,target,n_obs,MAE,MSE,RMSE,MAPE,SMAPE,best_order,guerrero_smoothness,best_lambda,window,alpha,degree,notes,kind,validation_best_lambda,validation_best_score,lambda_,order,min_periods,initial
+TrainValidationSelector,final,observed_series,,,,,,,1.0,0.05,0.027008089353330433,,,,Selected on validation after fitting 2476 training observations.,selector,0.027008015720639378,0.01395962230374658,,,,
+TimeWeightedValidationSelector,final,observed_series,,,,,,,1.0,0.98,615.7562471926212,,,,Selected on validation after fitting 2476 training observations.,selector,612.8026004880667,0.001897587788355734,,,,
+HPTrend,final,observed_series,,,,,,,2.0,0.9441945106873262,1600.0,,,,Fixed-parameter baseline; no validation hyperparameter search.,estimator,,,1600.0,,,
+WhittakerTrend,final,observed_series,,,,,,,2.0,0.749999999998464,4.874751468887553,,,,Fixed-parameter baseline; no validation hyperparameter search.,estimator,,,,2.0,,
+MovingAverageTrend,final,observed_series,,,,,,,,,,60.0,,,Fixed-parameter baseline; no validation hyperparameter search.,estimator,,,,,,
+ExponentialSmoothingTrend,final,observed_series,,,,,,,,,,,0.2,,Fixed-parameter baseline; no validation hyperparameter search.,estimator,,,,,,
+PolynomialTrendForecaster,final,observed_series,,,,,,,,,,,,2.0,Polynomial fitted on train for validation and train+validation for test.,polynomial_forecaster,,,,,,

@@ -1,0 +1,157 @@
+\section{Results}
+Figure~\ref{fig:split} shows the temporal split used in the experiment.
+Figure~\ref{fig:trends} shows the fitted trends before the test period.
+Figure~\ref{fig:validation} shows validation curves for the selector-based
+methods. Figure~\ref{fig:forecasts} displays test forecasts, while
+Figures~\ref{fig:rmse} and~\ref{fig:smape} summarize test errors. The realized
+roughness diagnostic is shown in Figure~\ref{fig:roughness}.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{\paperroot figures/sp500_train_val_test_split.pdf}
+  \caption{Temporal train, validation, and test split for S\&P 500 log prices.}
+  \label{fig:split}
+\end{figure}
+
+Figure~\ref{fig:split} documents the chronological evaluation design. The
+training segment is used to fit candidate models, the validation segment is
+used only for hyperparameter selection, and the test segment is held out until
+final evaluation. This ordering is important because randomly mixing financial
+time points would leak future information into the model-selection step.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{\paperroot figures/sp500_smoothed_trends.pdf}
+  \caption{In-sample trend estimates fitted before the test period.}
+  \label{fig:trends}
+\end{figure}
+
+Figure~\ref{fig:trends} compares the fitted trends on the train-plus-validation
+sample before test forecasting begins. Curves that stay close to the observed
+series have lower in-sample smoothing bias but may carry more short-run
+variation, while flatter curves impose stronger smoothness. The figure is
+therefore a visual complement to the parameter and realized-roughness tables:
+it shows what each smoothing choice does to the observed log-price path.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{\paperroot figures/sp500_validation_curves.pdf}
+  \caption{Validation curves over the Guerrero smoothness index for selector-based penalized methods. The vertical scale is clipped to keep the lower-order curves readable when the order-three curve is much larger.}
+  \label{fig:validation}
+\end{figure}
+
+Figure~\ref{fig:validation} shows how validation error changes as the Guerrero
+smoothness index varies for each candidate difference order. The selected point
+is the minimum of the displayed validation criterion for each selector. In this
+run, the order-three curves are much larger than the order-one and order-two
+curves, so the plotted y-axis is limited to reveal the smaller-scale structure
+that determines the useful comparison among the better-performing candidates.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{\paperroot figures/sp500_forecasts_test.pdf}
+  \caption{Test-set forecasts from the compared methods. Pale line segments show each method's fitted train-validation trend with alpha 0.2; bright segments show the held-out test forecasts.}
+  \label{fig:forecasts}
+\end{figure}
+
+Figure~\ref{fig:forecasts} overlays each method's test-period forecast on the
+held-out observed log prices. The pale pre-test segments show the fitted trend
+state from which each method extrapolates, which explains why the bright
+forecast segments do not necessarily begin at the last raw observed value. This
+figure should be read together with the test-error table: a forecast that
+visually tracks the level and slope of the test period tends to have lower RMSE
+and SMAPE, while forecasts that remain too flat or extrapolate the wrong slope
+accumulate larger errors.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}{0.48\linewidth}
+    \includegraphics[width=\linewidth]{\paperroot figures/sp500_test_rmse_barplot.pdf}
+    \caption{RMSE}
+    \label{fig:rmse}
+  \end{subfigure}
+  \begin{subfigure}{0.48\linewidth}
+    \includegraphics[width=\linewidth]{\paperroot figures/sp500_test_smape_barplot.pdf}
+    \caption{SMAPE}
+    \label{fig:smape}
+  \end{subfigure}
+  \caption{Test error summaries.}
+\end{figure}
+
+Figures~\ref{fig:rmse} and~\ref{fig:smape} rank methods by two test-set error
+summaries. RMSE emphasizes larger forecast mistakes because errors are squared
+before averaging, while SMAPE reports a scale-free percentage-style error. A
+method that performs well in both panels is more robustly accurate on the
+chosen test window than a method that improves only one metric.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.8\linewidth]{\paperroot figures/sp500_roughness_vs_error.pdf}
+  \caption{Realized roughness diagnostic against test RMSE.}
+  \label{fig:roughness}
+\end{figure}
+
+Figure~\ref{fig:roughness} separates forecast performance from realized
+roughness. The horizontal axis is the diagnostic
+\(R_d(\hat{\tau})=\|D^d\hat{\tau}\|_2^2\), computed after fitting each trend;
+it is not Guerrero smoothness. Points far to the left are smoother in realized
+finite-difference terms, while lower points have better test RMSE. The scatter
+therefore shows whether extra smoothness coincides with better forecasting in
+this empirical split.
+
+\subsection{Tables}
+Table~\ref{tab:test_metrics} reports the final held-out test results. The
+columns MAE, RMSE, and SMAPE summarize forecast accuracy on observations that
+were not used for hyperparameter selection. The parameter columns should be
+read method by method: Guerrero smoothness and \(\lambda\) are meaningful only
+for finite-difference penalized smoothers, while window, alpha, and degree
+describe the moving-average, exponential-smoothing, and polynomial baselines.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Held-out test accuracy and method-specific settings.}
+  \label{tab:test_metrics}
+  \input{\paperroot tables/test_metrics.tex}
+\end{table}
+
+Table~\ref{tab:selection_metrics} reports validation-period performance before
+the final test refit. These values explain why the validation-based selectors
+chose their reported settings, but they are not final generalization errors.
+Comparing this table with Table~\ref{tab:test_metrics} shows whether a method
+that looked good during validation continued to perform well on the held-out
+test window.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Validation-period accuracy used for model-selection comparison.}
+  \label{tab:selection_metrics}
+  \input{\paperroot tables/selection_metrics.tex}
+\end{table}
+
+Table~\ref{tab:model_parameters} collects the selected or fixed model settings
+in one place. The selector rows show the chosen difference order, Guerrero
+smoothness index, and corresponding \(\lambda\). HPTrend and WhittakerTrend
+show their fixed finite-difference penalty settings and implied Guerrero
+indices. The non-Guerrero benchmarks deliberately have blank Guerrero
+smoothness entries, because their tuning parameters are window length,
+exponential alpha, or polynomial degree rather than \(S_d(\lambda;N)\).
+
+\begin{table}[htbp]
+  \centering
+  \caption{Selected or fixed model parameters.}
+  \label{tab:model_parameters}
+  \input{\paperroot tables/model_parameters.tex}
+\end{table}
+
+Table~\ref{tab:roughness_metrics} reports realized roughness for every fitted
+trend using the stated roughness order. Unlike Guerrero smoothness, this
+diagnostic is computed from the fitted trend itself and can therefore be
+reported for all methods. The accompanying test RMSE column makes it possible
+to compare the smoothness of the fitted curve with its forecasting accuracy.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Realized roughness diagnostics and test RMSE.}
+  \label{tab:roughness_metrics}
+  \input{\paperroot tables/roughness_metrics.tex}
+\end{table}

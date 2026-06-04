@@ -1,0 +1,24 @@
+\section{Discussion}
+The results should be interpreted as one empirical comparison on one financial
+index over one historical period. Forecasting accuracy and trend recovery are
+different goals, and a method that forecasts well over the selected test window
+need not recover a latent economic trend. Validation-based selection can also
+overfit the validation period, especially when the candidate grid is wide or
+the market regime changes between validation and test.
+
+Guerrero smoothness is a model-side index defined only for finite-difference
+penalized least-squares smoothers. It maps a smoothing penalty \(\lambda\) into
+a comparable scale \(S_d(\lambda; N)\) once the sample size \(N\) and
+difference order \(d\) are fixed. By contrast, realized roughness is an output
+diagnostic \(R_d(\hat{\tau}) = \|D^d\hat{\tau}\|_2^2\) that can be computed for
+any fitted trend. Therefore, moving-average, exponential-smoothing, and
+polynomial benchmarks do not have a native Guerrero smoothness index, although
+their fitted trends can still be compared through realized roughness.
+
+Future sensitivity checks should vary the time period, include additional
+tickers, and compare against synthetic experiments where the true trend is
+known. Additional baselines such as Kalman filters, structural time-series
+models, ARIMA models, STL/LOESS, smoothing splines, and structural-break models
+would also make the comparison broader
+\citep{kalman1960new,harvey1989structural,box2008time,cleveland1979lowess,
+cleveland1990stl,wahba1990splines}.

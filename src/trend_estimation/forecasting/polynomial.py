@@ -42,7 +42,25 @@ class PolynomialTrendForecaster:
                 steps = len(indices_from_slice_or_array(test_idx, n_obs))
             else:
                 steps = 1
-        forecast_index = np.arange(n_obs, n_obs + int(steps), dtype=float)
+        steps = int(steps)
+        target_idx = None
+        if test_idx is not None:
+            target_idx = indices_from_slice_or_array(test_idx, n_obs)
+        elif self.fit_on == "train" and val_idx is not None:
+            target_idx = indices_from_slice_or_array(val_idx, n_obs)
+
+        if target_idx is not None and target_idx.size > 0:
+            forecast_index = target_idx[:steps].astype(float)
+            if forecast_index.size < steps:
+                extra = np.arange(
+                    target_idx[-1] + 1,
+                    target_idx[-1] + 1 + steps - forecast_index.size,
+                    dtype=float,
+                )
+                forecast_index = np.r_[forecast_index, extra]
+        else:
+            start = int(np.max(fit_idx)) + 1
+            forecast_index = np.arange(start, start + steps, dtype=float)
         forecast_values = poly(forecast_index)
         self.degree_ = self.degree
         self.fit_on_ = self.fit_on
@@ -55,7 +73,7 @@ class PolynomialTrendForecaster:
             forecast_values_=self.forecast_values_,
             forecast_index_=self.forecast_index_,
             origin_=self.fit_on,
-            steps_=int(steps),
+            steps_=steps,
             model_name_="PolynomialTrendForecaster",
             metadata_={"degree": self.degree, "fit_on": self.fit_on},
         )

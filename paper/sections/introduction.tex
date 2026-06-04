@@ -1,0 +1,18 @@
+\section{Introduction}
+Trend estimation is a basic task in time series analysis, but trend smoothness
+is rarely known in advance. Standard time-series and forecasting references
+emphasize that trend extraction, prediction, and structural interpretation are
+related but distinct goals \citep{chatfield2003analysis,brockwell2016introduction,
+hamilton1994timeseries,makridakis1998forecasting}. This motivates procedures
+that choose smoothness from data while preserving a strict temporal evaluation
+protocol. This paper compares the proposed train-validation smoothness
+selection approach with a time-weighted validation variant and several
+classical or simple benchmarks.
+
+The comparison is implemented as a reproducible subproject that uses
+\texttt{trend\_estimation} as a normal Python library dependency
+\citep{trendestimation}. The purpose is not to claim universal superiority from
+one ticker, but to provide a concrete empirical case study and a template for
+broader comparisons. The paper is deliberately explicit about terminology:
+Guerrero smoothness is used only for finite-difference penalized smoothers,
+whereas realized roughness is reported as a diagnostic for every fitted trend.

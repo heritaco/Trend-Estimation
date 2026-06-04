@@ -1,0 +1,309 @@
+\section{Algorithm}
+The central algorithm fits a penalized trend for each candidate Guerrero
+smoothness setting, evaluates out-of-sample validation forecasts, and then
+refits the selected model before test evaluation. This section summarizes the
+mechanism behind the penalized estimator, the numerical linear algebra used to
+fit it, and the validation search used to choose among candidates. The
+penalized objective belongs to the same finite-difference smoothing family as
+Whittaker-Henderson graduation, Guerrero smoothing, and penalized spline
+methods \citep{whittaker1922graduation,henderson1924graduation,
+guerrero2007penalized,eilers1996psplines,eilers2003perfect,wahba1990splines}.
+
+Let \(z=(z_1,\ldots,z_N)^\top\) denote the observed training series, let \(d\)
+be the finite-difference order, and let
+\[
+  K \in \mathbb{R}^{(N-d)\times N}
+\]
+be the order-\(d\) differencing matrix. For a penalty value \(\lambda > 0\),
+the penalized trend estimate is defined by
+\begin{equation}
+\label{eq:algorithm_pls}
+  \hat{t}(\lambda)
+  =
+  \arg\min_{t\in\mathbb{R}^N}
+  \left\{
+    \|z-t\|_2^2 + \lambda \|K t\|_2^2
+  \right\}.
+\end{equation}
+The first term measures fidelity to the observed series and the second term
+penalizes roughness. Larger values of \(\lambda\) produce smoother fitted
+trends.
+
+The objective in \eqref{eq:algorithm_pls} is quadratic. Define
+\[
+  A(\lambda) = I_N + \lambda K^\top K.
+\]
+Taking the derivative with respect to \(t\) and setting it equal to zero gives
+\[
+  A(\lambda)\hat{t}(\lambda)=z.
+\]
+Since \(A(\lambda)\) is positive definite for \(\lambda>0\), the fitted trend is
+\begin{equation}
+\label{eq:algorithm_smoother}
+  \hat{t}(\lambda)
+  =
+  S(\lambda)z,
+  \qquad
+  S(\lambda)=\left(I_N+\lambda K^\top K\right)^{-1}.
+\end{equation}
+Here \(S(\lambda)\) is the smoothing matrix.
+
+\subsection{Spectral solution of the penalized system}
+Although \eqref{eq:algorithm_smoother} is written with an inverse, the
+implementation does not form a dense inverse directly. For a fixed sample size
+\(N\) and order \(d\), it first constructs the penalty matrix
+\[
+  P_d = K^\top K.
+\]
+This matrix is symmetric positive semidefinite, so it admits an orthogonal
+eigendecomposition
+\[
+  P_d = Q \Delta Q^\top,
+  \qquad
+  \Delta=\mathrm{diag}(\delta_1,\ldots,\delta_N).
+\]
+Then
+\[
+  I_N+\lambda P_d
+  =
+  Q(I_N+\lambda \Delta)Q^\top,
+\]
+and the fitted trend can be computed as
+\begin{equation}
+\label{eq:algorithm_spectral_solution}
+  \hat{t}(\lambda)
+  =
+  Q
+  \mathrm{diag}\left(
+    \frac{1}{1+\lambda \delta_1},
+    \ldots,
+    \frac{1}{1+\lambda \delta_N}
+  \right)
+  Q^\top z.
+\end{equation}
+This reduces each candidate fit to projections onto the eigenvectors, elementwise
+division by \(1+\lambda\delta_i\), and a projection back to the original time
+domain. Since the same \(Q\) and \(\delta_i\) are reused for many candidate
+\(\lambda\) values at the same \(N\) and \(d\), the paper pipeline benefits from
+caching the solver for repeated fits. The same eigenvalues also provide the
+effective-degrees-of-freedom trace used in Guerrero's index, so the numerical
+linear algebra for fitting and the numerical linear algebra for tuning are
+shared rather than duplicated.
+
+For Guerrero-style penalized trends, the implementation may also estimate a
+constant \(d\)-th difference drift. In that case the right-hand side is adjusted
+iteratively and the drift estimate \(m\) is updated from the fitted trend until
+the change is smaller than a numerical tolerance. HPTrend and WhittakerTrend are
+run as classical fixed-drift baselines with this drift set to zero.
+
+\subsection{Mapping Guerrero smoothness to \texorpdfstring{\(\lambda\)}{lambda}}
+The paper reports Guerrero smoothness for finite-difference penalized smoothers,
+but the linear system is solved in terms of \(\lambda\). The eigendecomposition
+above gives a numerically convenient expression for the trace of the smoothing
+matrix:
+\[
+  \mathrm{tr}\{S(\lambda)\}
+  =
+  \sum_{i=1}^N \frac{1}{1+\lambda\delta_i}.
+\]
+For \(d\ge 1\), the implementation uses the normalized Guerrero index
+\begin{equation}
+\label{eq:algorithm_guerrero_normalized}
+  s(\lambda;N,d)
+  =
+  \frac{
+    1 - N^{-1}\sum_{i=1}^N (1+\lambda\delta_i)^{-1}
+  }{
+    1-d/N
+  },
+\end{equation}
+which maps the attainable range to a scale close to \([0,1)\) for the finite
+sample and difference order \citep{guerrero2007penalized}. Given a requested
+Guerrero smoothness value \(s\), the code finds the corresponding \(\lambda\)
+by bisection:
+\begin{enumerate}
+  \item Set an initial bracket \([0,1]\).
+  \item Increase the upper endpoint by factors of ten until the target
+        smoothness is bracketed.
+  \item Bisect the interval until the trace-based smoothness is within the
+        numerical tolerance.
+\end{enumerate}
+This step is monotone because increasing \(\lambda\) decreases the effective
+degrees of freedom \(\mathrm{tr}\{S(\lambda)\}\) and therefore increases the
+Guerrero smoothness index.
+
+\subsection{How Guerrero's idea defines the penalized methods}
+Guerrero's idea is not a separate estimator in the pipeline; it is the
+trace-based scale used to parameterize and compare finite-difference penalized
+smoothers. Once \(N\) and \(d\) are fixed, every penalty value \(\lambda\)
+corresponds to a Guerrero smoothness value through the smoothing matrix trace.
+The implementation uses this correspondence in four related ways.
+
+For TrainValidationSelector, the candidate set is written directly as pairs
+\((d,s)\), where \(s\) is the Guerrero smoothness index. Each candidate \(s\)
+is converted to its corresponding \(\lambda\), the penalized system is solved
+on the training segment, and the resulting trend is extrapolated into the
+validation segment. The selected model is the candidate with the smallest
+validation error. In this sense, Guerrero's index becomes the hyperparameter
+that the temporal validation split chooses.
+
+For TimeWeightedValidationSelector, the same Guerrero-indexed candidate set is
+used. The difference is only in the validation criterion: later validation
+observations receive larger weights, so the selected Guerrero smoothness is the
+one that performs best for the more recent part of the validation window. The
+underlying finite-difference penalty, the \(s\)-to-\(\lambda\) conversion, and
+the linear solve are otherwise the same as in TrainValidationSelector.
+
+For HPTrend, the trend is also a finite-difference penalized least-squares
+smoother, usually with a second-difference penalty. The classical HP
+presentation specifies a penalty \(\lambda\) rather than a Guerrero smoothness
+index. In the paper pipeline, that fixed \(\lambda\) is passed through the same
+trace formula to report the implied Guerrero smoothness. HPTrend is therefore
+Guerrero-compatible for interpretation, even though the validation set is not
+used to choose its penalty.
+
+For WhittakerTrend, the fitted trend again solves the same algebraic family of
+linear systems, with a finite-difference penalty and a fixed penalty setting.
+As with HPTrend, the fixed \(\lambda\) determines a fitted smoother matrix and
+therefore an implied Guerrero smoothness index. This lets WhittakerTrend be
+reported beside the validation-selected methods without pretending that it ran
+a validation search.
+
+This is why the paper reports Guerrero smoothness for TrainValidationSelector,
+TimeWeightedValidationSelector, HPTrend, and WhittakerTrend, but leaves that
+field blank for moving averages, exponential smoothing, and polynomial
+forecasting. Those latter methods can still be evaluated by forecast error and
+realized roughness, but they do not have a native \(S_d(\lambda;N)\) because
+they are not defined by the penalized system in
+\eqref{eq:algorithm_pls}.
+
+For validation, let \(R\) be the matrix that selects validation observations and
+let \(n_{\mathrm{val}}\) be the number of validation points. The validation
+residual is
+\[
+  r(\lambda) = Rz - R S(\lambda)z,
+\]
+and the validation mean squared error is
+\begin{equation}
+\label{eq:algorithm_validation_mse}
+  f(\lambda)
+  =
+  \frac{1}{n_{\mathrm{val}}}
+  r(\lambda)^\top r(\lambda).
+\end{equation}
+The derivative calculation in the companion report follows from
+\[
+  S'(\lambda)
+  =
+  -S(\lambda)K^\top K S(\lambda),
+\]
+which implies
+\[
+  r'(\lambda)
+  =
+  R S(\lambda)K^\top K S(\lambda)z.
+\]
+Therefore,
+\begin{equation}
+\label{eq:algorithm_validation_derivative}
+  f'(\lambda)
+  =
+  \frac{2}{n_{\mathrm{val}}}
+  \left[ R\left(I_N-S(\lambda)\right)z \right]^\top
+  \left[ R S(\lambda)K^\top K S(\lambda)z \right].
+\end{equation}
+
+\subsection{Validation search and local minima}
+The derivative in \eqref{eq:algorithm_validation_derivative} explains the
+shape of the validation objective, but the implemented paper pipeline uses a
+robust direct search over candidate Guerrero smoothness values. For each
+candidate difference order \(d\) and smoothness value \(s\), the algorithm:
+\begin{enumerate}
+  \item converts \(s\) to \(\lambda\) using the bisection procedure above;
+  \item fits the penalized trend on the training segment only;
+  \item extrapolates the fitted trend into the validation segment;
+  \item computes the validation loss between the forecast and the observed
+        validation log prices.
+\end{enumerate}
+For the S\&P 500 comparison, the paper script evaluates orders
+\(d\in\{1,2,3\}\) and a fixed grid of Guerrero smoothness values between 0.05
+and 0.98. The broader library default uses a denser grid, but the paper uses a
+smaller reproducible grid to keep the empirical study fast and stable.
+
+The selector records the full validation curve and detects local minima on the
+one-dimensional smoothness grid for each order. A grid point is treated as a
+local minimum when its validation score is no larger than the scores of its
+neighbors; boundary points can also be local minima if they improve on their
+single neighbor. The library can optionally refine each detected bracket by
+golden-section search. In the paper pipeline, refinement is disabled so that the
+saved validation curves, local minima, and selected value all correspond exactly
+to the stated reproducible grid.
+
+The time-weighted selector uses the same candidate search, but replaces the
+ordinary mean squared validation loss with a weighted validation loss. In the
+paper run, the weights follow an exponential decay scheme, so later validation
+observations receive relatively more emphasis than earlier validation
+observations. This changes only the scoring rule, not the penalized smoothing
+linear algebra. In forecasting terminology, this is a validation-rule change
+rather than a different smoothing model \citep{makridakis1998forecasting,
+hyndman2008exponential}.
+
+\subsection{Forecasting from a fitted penalized trend}
+After fitting a penalized trend on the training segment, the package forecasts
+future trend values by extending the finite-difference structure at the right
+tail. If the selected order is \(d\), the forecast recursively imposes a
+constant estimated \(d\)-th difference \(m\). For \(d=1\), this is a constant
+slope extension; for \(d=2\), it is a constant second-difference extension; and
+for higher orders it extends the corresponding finite-difference recurrence.
+These forecasts are used for validation scoring and, after refitting on
+training plus validation, for final test evaluation. The benchmark forecasts
+are intentionally simpler: trailing moving averages, exponential smoothing, and
+polynomial extrapolation are used as transparent baselines rather than as a
+complete forecasting taxonomy \citep{brown1959forecasting,holt2004exponential,
+winters1960forecasting,gardner1985exponential,gardner2006exponential,
+draper1998regression}.
+
+\subsection{Final comparison protocol}
+The complete numerical procedure for selector-based penalized methods is:
+\begin{enumerate}
+  \item split the series temporally into training, validation, and test
+        segments;
+  \item fit and score each \((d,s)\) candidate on training-to-validation
+        forecasts;
+  \item choose the candidate with the lowest validation loss, without using the
+        test segment;
+  \item refit the chosen penalized smoother on training plus validation;
+  \item forecast the test segment and compute MAE, RMSE, SMAPE, and related
+        metrics;
+  \item compute realized roughness \(R_d(\hat{t})=\|D^d\hat{t}\|_2^2\) from the
+        fitted training-plus-validation trend.
+\end{enumerate}
+The non-Guerrero baselines use the same temporal protocol, but they do not have
+a Guerrero smoothness search. The moving-average baseline uses its fixed
+trailing window, the exponential-smoothing baseline uses its fixed \(\alpha\),
+and the polynomial forecaster uses its fixed degree. They still receive test
+forecasts and realized roughness diagnostics, but their Guerrero smoothness
+entries are left blank.
+
+The Guerrero smoothness index used by the implementation is
+\[
+  S_d(\lambda; N)
+  =
+  1 -
+  \frac{\mathrm{tr}\left[S(\lambda)\right]}{N},
+  \qquad
+  S(\lambda)=\left(I_N+\lambda K^\top K\right)^{-1}.
+\]
+This index is meaningful for the finite-difference penalized smoothers in the
+comparison: the train-validation selector, the time-weighted selector, HPTrend,
+and WhittakerTrend. It is not a native parameter of moving averages,
+exponential smoothing, or polynomial forecasting.
+
+In practice, solving \(f'(\lambda)=0\) does not give a simple general closed
+form. The implementation therefore uses numerical validation search over the
+package's normalized Guerrero smoothness parameter, converts the selected index
+to \(\lambda\), and then refits the final penalized trend on the combined
+training and validation sample. The comparative pipeline applies the same
+temporal selection principle to the proposed train-validation selector and its
+time-weighted variant, while fixed-parameter baselines are fit on the same
+training and refit samples.
