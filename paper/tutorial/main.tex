@@ -1,0 +1,187 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,mathtools,booktabs,hyperref}
+
+\title{Penalized Trend Estimation from First Principles: A Step-by-Step Companion}
+\author{Heriberto Espino Montelongo}
+\date{\today}
+
+\newcommand{\R}{\mathbb{R}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This companion document explains the mathematical and computational ideas used
+in the Trend Estimation project for a reader who has not previously studied
+penalized smoothing. It develops finite differences, quadratic penalties,
+closed-form trend estimation, the meaning of the smoothing parameter, temporal
+validation, analytic sensitivity, and numerical optimization. It also explains
+why the pure penalized model and the Guerrero model with an estimated drift
+must be treated separately.
+\end{abstract}
+
+\section{Glossary and notation}
+Let $y=(y_1,\ldots,y_n)^\top\in\R^n$ be an observed time series and let
+$t=(t_1,\ldots,t_n)^\top$ denote an unknown smooth trend.
+
+\begin{itemize}
+\item $D_d$: matrix that computes finite differences of order $d$.
+\item $Q=D_d^\top D_d$: quadratic roughness-penalty matrix.
+\item $\lambda\ge 0$: penalty or smoothing parameter.
+\item $S_\lambda=(I+\lambda Q)^{-1}$: smoothing matrix for the pure model.
+\item forecast origin: last time index whose observation is allowed to enter a fit.
+\item look-ahead leakage: use of information that would not have been known at the forecast origin.
+\end{itemize}
+
+\section{Why finite differences measure curvature}
+For first differences,
+\[
+\Delta t_i=t_{i+1}-t_i.
+\]
+Second differences are
+\[
+\Delta^2t_i=t_{i+2}-2t_{i+1}+t_i.
+\]
+If $\Delta^2t_i=0$ everywhere, the sequence has constant first difference and
+therefore follows a discrete straight line. More generally, forcing
+$\Delta^dt=0$ produces a discrete polynomial of degree at most $d-1$.
+
+\section{The pure penalized smoother}
+We balance fidelity to the observations against roughness:
+\begin{equation}
+J(t;\lambda)=\|y-t\|_2^2+\lambda\|D_dt\|_2^2.
+\end{equation}
+The first term is small when $t$ follows the data. The second term is small when
+$t$ has small order-$d$ differences. Increasing $\lambda$ therefore prioritizes
+smoothness more strongly.
+
+Because
+\[
+\|D_dt\|_2^2=t^\top D_d^\top D_dt=t^\top Qt,
+\]
+we have
+\[
+J(t;\lambda)=(y-t)^\top(y-t)+\lambda t^\top Qt.
+\]
+Differentiating with respect to $t$ gives
+\[
+\nabla_tJ=2(t-y)+2\lambda Qt.
+\]
+Setting the gradient equal to zero,
+\[
+(I+\lambda Q)t=y.
+\]
+Hence
+\begin{equation}
+\boxed{\widehat t_\lambda=(I+\lambda Q)^{-1}y.}
+\end{equation}
+In code we solve the corresponding linear/spectral system; we do not explicitly
+form a matrix inverse.
+
+\section{What happens when lambda changes?}
+The trend itself is a function of $\lambda$. Write
+\[
+S_\lambda=(I+\lambda Q)^{-1},\qquad \widehat t_\lambda=S_\lambda y.
+\]
+The derivative of a matrix inverse is
+\[
+\frac{dA^{-1}}{d\lambda}
+=-A^{-1}\frac{dA}{d\lambda}A^{-1}.
+\]
+Since $A=I+\lambda Q$ and $A'=Q$,
+\[
+S_\lambda'=-S_\lambda Q S_\lambda.
+\]
+Therefore
+\begin{equation}
+\boxed{\widehat t_\lambda'=-S_\lambda Q\widehat t_\lambda.}
+\end{equation}
+Differentiating one more time gives
+\begin{equation}
+\boxed{\widehat t_\lambda''=2S_\lambda Q S_\lambda Q\widehat t_\lambda.}
+\end{equation}
+The implementation checks these expressions against finite-difference
+approximations before they are used by Newton-type optimization.
+
+\section{Why optimize log-lambda?}
+A valid penalty satisfies $\lambda>0$. Introduce
+\[
+\theta=\log\lambda,\qquad \lambda=e^\theta.
+\]
+Then every real $\theta$ maps automatically to a positive $\lambda$. If
+$g(\theta)=f(e^\theta)$,
+\[
+g'(\theta)=\lambda f'(\lambda),
+\]
+and
+\[
+g''(\theta)=\lambda f'(\lambda)+\lambda^2f''(\lambda).
+\]
+This allows Brent-type minimization or Newton iterations to work on an
+unconstrained logarithmic scale while preserving positivity.
+
+\section{Why validation must respect time}
+Suppose the model is evaluated on observations $y_{T+1},\ldots,y_{T+h}$. A
+valid experiment fits the model using only
+\[
+y_1,\ldots,y_T.
+\]
+The future block is then used only to compute an error. Fitting a smoother on
+the entire vector first and subsequently calling the last observations
+``validation'' would leak future information into the fitted trend.
+
+Rolling-origin evaluation repeats the valid procedure at several origins:
+\[
+1{:}T_1\rightarrow T_1{+}1{:}T_1{+}h,
+\quad
+1{:}T_2\rightarrow T_2{+}1{:}T_2{+}h,
+\quad\ldots
+\]
+This is the principal validation design for financial experiments in the
+project.
+
+\section{Why Guerrero is a different model}
+The original project uses
+\begin{equation}
+\widehat\tau_{\lambda,d}
+=(I+\lambda Q)^{-1}
+\left(y+\lambda\widehat mD_d^\top\mathbf1\right).
+\end{equation}
+Here $\widehat m$ represents an estimated order-$d$ difference drift. The code
+re-estimates this quantity from the fitted trend, so in general
+\[
+\widehat m=\widehat m(\lambda).
+\]
+Consequently, differentiating $\widehat\tau$ requires the product/chain rule
+for both the inverse matrix and $\widehat m(\lambda)$. The pure-model formula
+cannot simply be copied. The project therefore exposes two explicit estimators:
+\texttt{PurePenalizedTrend} and \texttt{GuerreroTrend}.
+
+\section{From smoothing to financial decisions}
+The eventual research pipeline is
+\[
+y\longrightarrow \widehat t_\lambda
+\longrightarrow \text{forecast or signal}
+\longrightarrow \text{decision}.
+\]
+There are then several possible definitions of ``optimal'' smoothing:
+\[
+\lambda_{\rm GCV},\qquad
+\lambda_{\rm forecast},\qquad
+\lambda_{\rm decision}.
+\]
+A central scientific question is whether these coincide. The project does not
+assume that they do.
+
+\section{Implementation map}
+The reusable mathematics belongs in \texttt{src/trend\_estimation}. Tests
+verify the operators, estimators, derivatives, and chronological splits.
+Experiments call the installed package. The formal paper states results
+compactly; this document records the derivations and implementation logic in a
+form suitable for learning and auditing.
+
+\end{document}

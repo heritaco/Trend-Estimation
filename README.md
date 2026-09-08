@@ -1,33 +1,65 @@
-# trend_estimation
+# Trend Estimation
 
-`trend_estimation` is a Python template package for penalized trend estimation in time series. It starts from a Guerrero-style penalized least-squares smoother and adds train-validation smoothness selection, multiple-local-minimum inspection, time-weighted validation losses, forecasting utilities, plotting, synthetic datasets, and metric tables.
+`trend_estimation` is a research-oriented Python library for penalized trend estimation, temporal validation, forecasting, and downstream decision experiments in time series.
 
-The initial mathematical core is
+The project now treats two related smoothers as first-class models rather than conflating them.
+
+## Model A: pure finite-difference penalization
+
+For observations \(y\in\mathbb{R}^n\), difference operator \(D_d\), and \(\lambda\ge 0\),
 
 \[
-\widehat{\tau}_{\lambda,d}=(I+\lambda D_d^\top D_d)^{-1}(y+\lambda \widehat m D_d^\top 1),
+\widehat t_{\lambda,d}
+=\arg\min_t\{\|y-t\|_2^2+\lambda\|D_dt\|_2^2\}
+=(I+\lambda D_d^\top D_d)^{-1}y.
 \]
 
-with an optional smoothness index `s` mapped to the penalty `lambda_` through the trace of the smoothing matrix.
+This model has especially simple analytic sensitivity with respect to \(\lambda\):
 
-## Installation with conda
+\[
+\frac{\partial \widehat t}{\partial\lambda}=-SQS y,
+\qquad
+\frac{\partial^2 \widehat t}{\partial\lambda^2}=2SQSQS y,
+\]
+
+where \(Q=D_d^\top D_d\) and \(S=(I+\lambda Q)^{-1}\).
+
+Use `PurePenalizedTrend` when the goal is a transparent quadratic smoother, analytic derivatives, or experiments with differentiable hyperparameter selection.
+
+## Model B: Guerrero-style smoother with drift
+
+The original project is retained as a separate model:
+
+\[
+\widehat\tau_{\lambda,d}
+=(I+\lambda D_d^\top D_d)^{-1}
+\left(y+\lambda\widehat m D_d^\top\mathbf 1\right),
+\]
+
+with \(\widehat m\) estimated from the fitted trend. Because \(\widehat m=\widehat m(\lambda)\), its full derivative requires differentiating the coupled fixed-point/system rather than copying the pure-model derivative.
+
+Use `GuerreroTrend` for this formulation. `PenalizedTrend` remains as a backward-compatible alias.
+
+## Research direction
+
+The current research program separates three questions:
+
+1. **Estimation:** how should a smooth trend be defined and computed?
+2. **Hyperparameter selection:** should \(\lambda\) be chosen by GCV, temporal forecast loss, or analytic/numerical optimization?
+3. **Decision-aware selection:** does the \(\lambda\) that minimizes forecast error differ from the \(\lambda\) that maximizes downstream financial utility?
+
+All financial validation must be chronological. Future observations may be used to score a fitted model, but never to construct the fitted trend used to predict them.
+
+## Installation
 
 ```bash
 conda env create -f environment.yml
 conda activate trend_estimation
-pip install -e .
+python -m pip install -e ".[dev,finance]"
 pytest
 ```
 
-If the environment already exists:
-
-```bash
-conda activate trend_estimation
-pip install -e .
-pytest
-```
-
-## Minimal example
+## Minimal examples
 
 ```python
 import trend_estimation as td
@@ -37,82 +69,59 @@ series = td.make_polynomial_trend_series(
 )
 y = series.y
 
-model = td.PenalizedTrend(order=2, smoothness=0.75)
-result = model.fit(y)
+pure = td.PurePenalizedTrend(order=2, lambda_=100.0).fit(y)
+guerrero = td.GuerreroTrend(order=2, smoothness=0.75).fit(y)
 
-fig = td.plot_smoothed_series(y, result.trend_)
-forecast = result.forecast(steps=20)
+sensitivity = td.pure_trend_derivatives(y, order=2, lambda_=100.0)
+print(sensitivity.first.shape)
 ```
 
-## Train-validation selection
+For temporal selection:
 
 ```python
-selector = td.TrainValidationSelector(
-    orders=[1, 2, 3],
-    detect_multiple_minima=True,
-)
-selection = selector.fit(y, train_idx=slice(0, 100), val_idx=slice(100, 130))
-
-print(selection.best_order_)
-print(selection.best_smoothness_)
-print(selection.best_score_)
-```
-
-## Time-weighted validation
-
-```python
-selector = td.TimeWeightedValidationSelector(
-    orders=[1, 2, 3],
-    weight_scheme="exponential",
-    decay=0.95,
-)
+selector = td.TrainValidationSelector(orders=[1, 2, 3])
 selection = selector.fit(y, train_idx=slice(0, 100), val_idx=slice(100, 130))
 ```
 
-## Plotting
+The selector fits on the training prefix and evaluates forecasts on the later validation block; validation observations are not included in the fit.
 
-The plotting layer is deliberately separate from fitting. Plotting functions return a `matplotlib.figure.Figure` and do not call `plt.show()` automatically.
+## Repository layout
 
-```python
-fig1 = td.plot_smoothed_series(y, result.trend_)
-fig2 = td.plot_train_val_test_split(y, slice(0,100), slice(100,130), slice(130,160))
-fig3 = td.plot_validation_curve(selection.validation_curve_, minima=selection.all_minima_)
+```text
+src/trend_estimation/   reusable library code
+tests/                  unit and mathematical-consistency tests
+paper/formal/           compact research manuscript
+paper/tutorial/         step-by-step pedagogical companion
+experiments/            reproducible research experiments
+legacy/                 historically important snapshots
 ```
 
-## Metrics
-
-```python
-metrics = td.compare_error_tables(
-    targets={"observed_series": y[130:160], "true_trend": series.true_trend[130:160]},
-    predictions={"PenalizedTrend": result.forecast(30)},
-)
-```
+The exact pre-refactor state is preserved on branch `archive/pre-research-v2`.
 
 ## Status
 
 Implemented:
 
-- Difference matrices.
-- Spectral Guerrero-style penalized solver.
-- Smoothness-to-lambda conversion.
-- Penalized trend estimator.
-- Train-validation selection.
-- Time-weighted validation selection.
-- Local-minimum detection and golden-section refinement.
-- Polynomial extrapolation from a fitted trend tail.
-- Basic polynomial benchmark forecaster.
-- Metric tables and plotting functions.
-- Synthetic datasets and tests.
+- finite-difference operators;
+- pure penalized smoother;
+- Guerrero-style penalized smoother with drift;
+- spectral solution machinery;
+- analytic first and second \(\lambda\)-derivatives for the pure smoother;
+- temporal train/validation selection;
+- rolling-origin split generation;
+- log-\(\lambda\) numerical optimization utilities;
+- polynomial continuation implied by finite differences;
+- benchmark models, metrics, plotting, synthetic datasets, and tests.
 
-Planned:
+Next research tasks:
 
-- GCV, AICc, BIC and blocked CV selectors.
-- AR(1), ARMA/ARIMA and state-space noise models.
-- Kalman smoothing.
-- Multivariate trends.
-- Piecewise/segmented smoothness.
-- JOSS paper metadata and full benchmark suite.
+- derive/implement implicit differentiation for the Guerrero fixed-point system;
+- implement GCV and blocked/rolling CV selectors;
+- benchmark Brent/Newton/grid selection in log-\(\lambda\) space;
+- add trend-filtering and state-space baselines;
+- formalize financial signals and portfolio objectives;
+- compare forecast-optimal and decision-optimal smoothing.
 
 ## References
 
-This package is conceptually related to Guerrero (2007), Hodrick-Prescott filtering, and Whittaker-Henderson smoothing. This template does not claim novel theoretical results and does not report benchmarks yet.
+The package is conceptually related to Guerrero (2007), Hodrick--Prescott filtering, Whittaker--Henderson smoothing, smoothing splines, and trend filtering. The software itself should not be interpreted as claiming novelty for those classical components; the research contribution is evaluated at the level of the full estimation-selection-decision pipeline.

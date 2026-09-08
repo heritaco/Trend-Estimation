@@ -1,3 +1,43 @@
 # Python bytecode/cache
 __pycache__/
 *.py[cod]
+
+# Packaging/build artifacts
+*.egg-info/
+build/
+dist/
+
+# Test/tool caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Environments and editor files
+.venv/
+venv/
+.env
+.DS_Store
+.vscode/
+.idea/
+
+# LaTeX generated files
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+
+# Paper build products (source files stay tracked)
+paper/build/*
+!paper/build/.gitkeep
+
+# Regenerable experiment outputs
+examples/outputs/
+paper/outputs/*.csv
+paper/outputs/*.json

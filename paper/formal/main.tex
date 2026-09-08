@@ -1,0 +1,100 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,mathtools,booktabs,graphicx,natbib,hyperref}
+
+\title{Decision-Aware Penalized Trend Estimation for Financial Time Series}
+\author{Heriberto Espino Montelongo}
+\date{\today}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Dt}{D_d}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We study the selection of smoothness in finite-difference penalized trend
+estimators when the fitted trend is used for temporal forecasting and, in a
+later stage, downstream financial decisions. The software framework separates
+a pure quadratic smoother from a Guerrero-style formulation with an estimated
+difference drift, because their dependence on the penalty parameter is not the
+same. The pure model admits explicit first- and second-order sensitivities with
+respect to the penalty parameter, enabling numerical optimization in
+log-penalty space. The empirical design is strictly chronological and compares
+statistical selection criteria with forecast-based and, eventually,
+decision-based objectives. This manuscript is a research draft: no novelty or
+performance claims are made until the corresponding comparisons are completed.
+\end{abstract}
+
+\section{Problem formulation}
+Let $y\in\R^n$ and let $\Dt$ be the order-$d$ finite-difference matrix. Define
+$Q=\Dt^\top\Dt$.
+
+\subsection{Pure penalized trend}
+The first model is
+\begin{equation}
+\widehat t_{\lambda,d}
+=\arg\min_{t\in\R^n}\left\{\|y-t\|_2^2+\lambda\|\Dt t\|_2^2\right\},
+\qquad \lambda\ge 0,
+\end{equation}
+with solution
+\begin{equation}
+\widehat t_{\lambda,d}=(I+\lambda Q)^{-1}y.
+\end{equation}
+Writing $S_\lambda=(I+\lambda Q)^{-1}$ gives
+\begin{align}
+\frac{\partial \widehat t}{\partial\lambda}
+&=-S_\lambda Q\widehat t,\\
+\frac{\partial^2 \widehat t}{\partial\lambda^2}
+&=2S_\lambda Q S_\lambda Q\widehat t.
+\end{align}
+These derivatives are evaluated numerically without constructing an explicit
+matrix inverse.
+
+\subsection{Guerrero-style trend with difference drift}
+The second model is
+\begin{equation}
+\widehat\tau_{\lambda,d}
+=(I+\lambda Q)^{-1}
+\left(y+\lambda\widehat m(\lambda)\Dt^\top\mathbf 1\right).
+\end{equation}
+Because $\widehat m$ is re-estimated from the fitted trend,
+$\widehat m=\widehat m(\lambda)$. Consequently the pure-model derivative cannot
+be reused unchanged. A full sensitivity calculation must differentiate the
+coupled fixed-point/system; implicit differentiation is the intended route.
+
+\section{Chronological model selection}
+Every validation protocol respects time ordering. At forecast origin $T$, only
+$y_1,\ldots,y_T$ may enter the fit. Future observations may score the forecast
+but may not influence the trend being evaluated. We will compare grid search,
+Brent-type minimization in $\theta=\log\lambda$, Newton iterations using
+analytic derivatives where available, generalized cross-validation, and
+rolling-origin forecast loss.
+
+\section{Research hypothesis}
+The central empirical question is whether a penalty selected for statistical
+or forecasting accuracy is also optimal for a downstream financial objective.
+Symbolically,
+\begin{equation}
+\lambda_{\mathrm{forecast}}\overset{?}{=}\lambda_{\mathrm{decision}}.
+\end{equation}
+This equality is treated as a testable hypothesis, not an assumption.
+
+\section{Planned experiments}
+Experiments will first validate derivatives on synthetic data against centered
+finite differences. They will then compare the two smoothers and classical
+baselines under rolling-origin evaluation. Only after those components are
+stable will the trend signal be connected to a portfolio layer.
+
+\section{Reproducibility}
+All reusable estimators live in \texttt{src/trend\_estimation}; manuscript
+experiments must call the installed package rather than duplicate estimator
+logic. The companion tutorial manuscript documents each derivation and
+implementation decision at a slower pedagogical level.
+
+\bibliographystyle{plainnat}
+\IfFileExists{paper/biblio.bib}{\bibliography{paper/biblio}}{\bibliography{../biblio}}
+\end{document}

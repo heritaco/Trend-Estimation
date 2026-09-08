@@ -1,73 +1,56 @@
-# S&P 500 Comparative Paper Subproject
+# Papers
 
-This folder contains a reproducible comparative study that uses the local
-`trend_estimation` Python library as an installed dependency.
+This project maintains two complementary manuscripts built from the same tested codebase.
 
-The separation is intentional:
+## `formal/`
 
-- `src/trend_estimation/` contains reusable library code.
-- `paper/` contains S&P 500-specific data handling, experiments, figures, tables, and LaTeX.
+The research manuscript. It should be concise, literature-grounded, and organized around claims that can be supported by derivations or reproducible experiments. It is the only manuscript intended for eventual journal submission.
 
-The data source is `yfinance`, used for research and educational purposes. The
-pipeline caches downloaded data locally so the study can be rerun without
-downloading every time.
+Current working theme: penalized trend estimation, chronological smoothness selection, and the comparison between forecast-optimal and downstream decision-optimal smoothing in financial time series.
 
-## Setup
+## `tutorial/`
+
+A step-by-step companion for readers who do not already know penalized smoothing, matrix derivatives, temporal validation, or numerical hyperparameter optimization. It may contain slower derivations, intuition, examples, implementation notes, and warnings that would be too pedagogical for the formal article.
+
+The tutorial must remain mathematically consistent with the formal manuscript and with `src/trend_estimation/`. It should never introduce a different estimator merely to simplify exposition without explicitly saying so.
+
+## Model naming convention
+
+Two estimators are first-class throughout both papers:
+
+1. **Pure penalized trend**
+
+   \[
+   \widehat t_{\lambda,d}=(I+\lambda D_d^\top D_d)^{-1}y.
+   \]
+
+   Implemented by `PurePenalizedTrend` / `PurePenalizedSolver`.
+
+2. **Guerrero-style penalized trend with drift**
+
+   \[
+   \widehat\tau_{\lambda,d}
+   =(I+\lambda D_d^\top D_d)^{-1}
+   \left(y+\lambda\widehat mD_d^\top\mathbf1\right).
+   \]
+
+   Implemented by `GuerreroTrend` / `GuerreroSpectralSolver`. `PenalizedTrend` remains a compatibility name for the older API.
+
+The distinction matters because the Guerrero drift is re-estimated from the fitted trend and therefore depends on \(\lambda\). The analytic derivative implemented for the pure smoother must not be reported as the derivative of the Guerrero formulation.
+
+## Historical S&P 500 comparison
+
+The previous root-level S&P 500 manuscript and its sections are retained temporarily as source material while the two new manuscripts absorb anything still useful. Its exact pre-refactor state is permanently preserved on branch `archive/pre-research-v2`.
+
+Generated LaTeX files and large regenerable outputs are not source material and are ignored by Git going forward.
+
+## Build
 
 From the repository root:
 
 ```bash
-conda activate trend_estimation
-python -m pip install -e ".[dev,finance]"
+latexmk -pdf -interaction=nonstopmode -outdir=paper/build paper/formal/main.tex
+latexmk -pdf -interaction=nonstopmode -outdir=paper/build paper/tutorial/main.tex
 ```
 
-## Build
-
-```bash
-python paper/build_paper.py --ticker ^GSPC --start 2010-01-01 --no-compile
-```
-
-Useful options:
-
-```bash
-python paper/build_paper.py --skip-download --no-compile
-python paper/build_paper.py --force-download --no-compile
-```
-
-The default cache files for the S&P 500 study are:
-
-```text
-paper/data/raw/sp500_2010_present.csv
-paper/data/processed/sp500_log_prices.csv
-```
-
-## LaTeX
-
-If `latexmk` is installed, compile from the repository root with:
-
-```bash
-latexmk -pdf -interaction=nonstopmode -outdir=paper/build paper/main.tex
-```
-
-Fallback sequence:
-
-```bash
-pdflatex -output-directory=paper/build paper/main.tex
-bibtex paper/build/main
-pdflatex -output-directory=paper/build paper/main.tex
-pdflatex -output-directory=paper/build paper/main.tex
-```
-
-The master build script attempts compilation only when `--no-compile` is not
-passed and `latexmk` is available.
-
-## Outputs
-
-The comparison writes CSV and LaTeX tables to `paper/tables/`, figures to
-`paper/figures/`, and intermediate experiment artifacts to `paper/outputs/`.
-
-The real S&P 500 data do not provide an observed true trend. The evaluation is
-therefore based on out-of-sample forecasts of the observed log-price series and
-on realized roughness diagnostics, not on true-trend recovery. Guerrero
-smoothness is reported only for finite-difference penalized smoothers where the
-index is mathematically native.
+The reusable estimators must be implemented and tested in `src/`; paper-specific scripts may orchestrate experiments but should not duplicate estimator mathematics.
